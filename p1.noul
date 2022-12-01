@@ -1,0 +1,7 @@
+day := 1;
+import "advent-prelude.noul";
+
+puzzle_input := advent_input();
+
+submit! 1, puzzle_input split "\n\n" map ints map sum then max;
+submit! 2, puzzle_input split "\n\n" map ints map sum then sort then (_[-3:]) then sum;

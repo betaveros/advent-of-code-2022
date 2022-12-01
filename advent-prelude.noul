@@ -1,0 +1,140 @@
+year := 2022;
+advent_session := try
+	read_file("session") then strip
+catch e ->
+	throw F"couldn't get session: {e}. do you have a session file?";
+try day catch _ -> throw "Please declare day first! (lol what a hack)";
+advent_input := \-> (
+	switch (read_file? F"p{day}.in")
+	case null -> (
+		print "requesting...";
+		t := request!
+			F"https://adventofcode.com/{year}/day/{day}/input",
+			{
+				"headers": {
+					"Cookie": F"session={advent_session}",
+					"User-Agent": "betaveros's AoC noulith library https://github.com/betaveros/advent-of-code-2022",
+				}
+			};
+		write_file(F"p{day}.in")(t);
+		print "requested";
+		t
+	)
+	case s -> (print "cached"; s)
+);
+submit := \level, answer -> (
+	echo F"Day {day} level {level} solving: {answer} [y/N/2]? ";
+	flush();
+	response := input();
+	while (response starts_with "2") (
+		level = 2;
+		echo F"Level 2 solving: {answer}? ";
+		flush();
+		response = input();
+	);
+	if (not! response.upper starts_with 'Y') (
+		print "Stopping";
+		return;
+	);
+	url := F"https://adventofcode.com/{year}/day/{day}/answer";
+	args := {
+		"method": "POST",
+		"headers": {
+			"Cookie": F"session={advent_session}",
+			"User-Agent": "betaveros's AoC noulith library https://github.com/betaveros/advent-of-code-2022"
+		},
+		"form": {"answer": answer, "level": $level},
+	};
+	# print! url, args;
+	resp := request! url, args;
+	append_file("advent.log")(resp);
+	for (line <- lines resp; if "answer" in line or "level" in line) print line;
+	throw "Finished"
+);
+
+ints := \s -> (
+	if (s search R"\d-\d") throw "dangerous!" else s search_all R"-?\d+" map int
+);
+nn_ints := \s -> s search_all R"\d+" map int;
+signed_ints := \s -> s search_all R"-?\d+" map int;
+
+four_adjacencies := \[i, j] -> [V(i-1, j), V(i, j-1), V(i, j+1), V(i+1, j)];
+five_adjacencies := \[i, j] -> [V(i-1, j), V(i, j-1), V(i, j), V(i, j+1), V(i+1, j)];
+nine_adjacencies := \[i, j] -> ((i-1) to (i+1)) ** ((j-1) to (j+1)) map vector;
+eight_adjacencies := \p -> nine_adjacencies(p) filter (!= p);
+
+# for (r, c) or (x, y)
+rotated_left := \[i, j] -> V(-j, i);
+rotated_right := \[i, j] -> V(j, -i);
+
+digits := \n -> str(n) map int;
+
+caesar_shift_one := \c, n ->
+if ('a' <= c <= 'z') chr(ord('a') + (ord(c) - ord('a') + n) %% 26)
+else if ('A' <= c <= 'Z') chr(ord('A') + (ord(c) - ord('A') + n) %% 26)
+else c;
+caesar_shift := \s, n -> s map (_ caesar_shift_one n) join "";
+
+struct Deque (dq_buffer, dq_front_index, dq_back_index);
+# Equal when empty. Else, "front < back" (in the modulo universe)
+# For simplicity we never completely fill the buffer. It's fine.
+
+# It's probably a bug that we don't yet have a way to define constructors, but
+# hilariously I think our functions almost coincidentally correctly accept
+# (null, null, null) as a valid empty state.
+
+dq_len := freeze \dq: Deque -> if (dq_back_index(dq) == null) 0 else
+	(dq_back_index(dq) - dq_front_index(dq)) %% len(dq_buffer(dq));
+
+dq_to_list := freeze \dq: Deque -> (
+	ret := [];
+	i := dq[dq_front_index];
+	while (i != dq[dq_back_index]) (
+		ret append= consume dq[dq_buffer][i];
+		i = (i + 1) % len(dq[dq_buffer]);
+	);
+	ret
+);
+
+dq_make_space := freeze \dq: Deque -> (
+	switch (dq[dq_buffer])
+	case null or [] -> Deque([null, null], 0, 0)
+	case _ -> if ((dq[dq_back_index] + 1) % len(dq[dq_buffer]) == dq[dq_front_index]) (
+		print("Expanding");
+		contents := dq_to_list(consume dq);
+		Deque(contents ++ (null .* (2 + len(contents))), 0, len(contents))
+	) else dq
+);
+
+dq_push_back := freeze \dq: Deque, e -> (
+	dq .= dq_make_space;
+	next_back := (dq[dq_back_index] + 1) % len(dq[dq_buffer]);
+	dq[dq_buffer][dq[dq_back_index]] = e;
+	dq[dq_back_index] = next_back;
+	# print("pushed", dq);
+	dq
+);
+
+dq_push_front := freeze \dq: Deque, e -> (
+	dq .= dq_make_space;
+	next_front := (dq[dq_front_index] - 1) %% len(dq[dq_buffer]);
+	dq[dq_front_index] = next_front;
+	dq[dq_buffer][dq[dq_front_index]] = e;
+	# print("pushed", dq);
+	dq
+);
+
+dq_pop_front := freeze \dq: Deque -> (
+	if (dq[dq_front_index] == dq[dq_back_index]) throw "deque empty";
+	ret := consume dq[dq_buffer][dq[dq_front_index]];
+	dq[dq_front_index] = (dq[dq_front_index] + 1) % len(dq[dq_buffer]);
+	[dq, ret]
+);
+
+dq_pop_back := freeze \dq: Deque -> (
+	if (dq[dq_front_index] == dq[dq_back_index]) throw "deque empty";
+	dq[dq_back_index] = (dq[dq_back_index] - 1) %% len(dq[dq_buffer]);
+	ret := consume dq[dq_buffer][dq[dq_back_index]];
+	[dq, ret]
+);
+
