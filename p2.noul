@@ -1,0 +1,23 @@
+day := 2;
+import "advent-prelude.noul";
+
+puzzle_input := advent_input();
+
+ans1 := 0;
+ans2 := 0;
+for (line <- puzzle_input.lines) (
+	left := switch (line[0]) case "A" -> 1 case "B" -> 2 case "C" -> 3;
+	right := switch (line[2]) case "X" -> 1 case "Y" -> 2 case "Z" -> 3;
+
+	ans1 += right;
+
+	if (left == right) ans1 += 3;
+	if ((right - left) %% 3 == 1) ans1 += 6;
+	# The neat version of the above:
+	# ans += (right - left + 1) %% 3 * 3;
+
+	ans2 += (left + right) %% 3 + 1;
+	ans2 += (right - 1) * 3;
+);
+submit! 1, ans1;
+submit! 2, ans2;
