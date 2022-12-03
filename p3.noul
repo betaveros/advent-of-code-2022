@@ -16,4 +16,7 @@ submit! 1, sum (for (line <- puzzle_input.lines) yield (
 submit! 2, sum (for (lns <- puzzle_input.lines group 3) yield (
 	[c] := lns map set fold &&;
 	score(c)
-))
+));
+
+# one-liner variant:
+submit! 2, puzzle_input.lines group 3 map (_ map set fold && apply score) then sum
