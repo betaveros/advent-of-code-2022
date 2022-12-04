@@ -1,0 +1,14 @@
+day := 4;
+import "advent-prelude.noul";
+
+puzzle_input := advent_input();
+
+submit! 1, puzzle_input.lines count \line -> (
+	a, b, c, d := nn_ints(line);
+	a <= c <= d <= b or c <= a <= b <= d
+);
+
+submit! 2, puzzle_input.lines count \line -> (
+	a, b, c, d := nn_ints(line);
+	not (b < c) and not (d < a)
+);
