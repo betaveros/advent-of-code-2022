@@ -1,0 +1,43 @@
+day := 5;
+import "advent-prelude.noul";
+
+# REQUIRES MANUAL PREPROCESSING: add a single "." in each blank spot above a stack.
+# Sample input becomes this:
+#  .  [D]  .
+# [N] [C]  .
+# [Z] [M] [P]
+#  1   2   3
+# Coding under time pressure is hard, ok.
+# See p5-handsfree.noul to see a version that doesn't involve that.
+
+puzzle_input := advent_input();
+
+diag, moves := puzzle_input split "\n\n";
+
+stacks := [] .* 10;
+
+for (part <- [1, 2]) (
+	for (line <- diag.lines.reverse) (
+		# Observe that this puts the numbers 1 to 9 on the bottom on each stack.
+		# There was absolutely no reason for me to do this, but it doesn't
+		# hurt...
+		for (letter, pos <- line filter (\a -> "1" <= a <= "9" or "A" <= a <= "Z" or a == ".") zip (1 to 9)) (
+			if (letter != ".") stacks[pos] append= letter;
+		)
+	);
+
+	# (variables cleaned up a bunch here)
+	for (line <- moves.lines) (
+		cnt, src, dst := ints(line);
+		switch (part)
+		case 1 -> for (_ <- 1 to cnt) (
+			stacks[dst] append= pop stacks[src];
+		)
+		case 2 -> (
+			stacks[dst] ++= stacks[src][-cnt:];
+			stacks[src] = stacks[src][:-cnt]
+		)
+	);
+
+	submit! part, stacks[1:] map last join ""
+)

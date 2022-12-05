@@ -1,0 +1,31 @@
+day := 5;
+import "advent-prelude.noul";
+
+puzzle_input := read_file("p5-handsfree.in");
+
+diag, moves := puzzle_input split "\n\n";
+
+stacks := [] .* 10;
+
+for (part <- [1, 2]) (
+	for (line <- diag.lines.reverse) (
+		for (letter, pos <- line group 4 map second zip (iota 1)) (
+			if (letter != " ") stacks[pos] append= letter;
+		)
+	);
+
+	# (variables cleaned up a bunch here)
+	for (line <- moves.lines) (
+		cnt, src, dst := ints(line);
+		switch (part)
+		case 1 -> for (_ <- 1 to cnt) (
+			stacks[dst] append= pop stacks[src];
+		)
+		case 2 -> (
+			stacks[dst] ++= stacks[src][-cnt:];
+			stacks[src] = stacks[src][:-cnt]
+		)
+	);
+
+	submit! part, stacks[1:] map last join ""
+)
