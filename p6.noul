@@ -1,0 +1,8 @@
+day := 6;
+import "advent-prelude.noul";
+
+puzzle_input := advent_input();
+
+# (loop extracted after the fact)
+for (part, mlen <- [[1, 4], [2, 14]])
+	submit! part, mlen + (puzzle_input.strip window mlen locate \x -> len(x) == len(set(x)))
