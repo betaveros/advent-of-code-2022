@@ -1,0 +1,31 @@
+day := 7;
+import "advent-prelude.noul";
+
+puzzle_input := advent_input();
+
+# We assume every directory is ls'd exactly once, which just means we can
+# ignore ls commands and, whenever we see a file, put it in the directory we
+# most recently cd'd to.
+pwd := [];
+csize := {:0};
+for (line <- puzzle_input.lines) (
+	switch (line.words)
+	case "$", "cd", "/" -> (pwd = [])
+	case "$", "cd", ".." -> pop pwd
+	case "$", "cd", x -> (pwd append= x)
+	case "$", "ls" -> null
+	case "dir", _ -> null
+	case size, _name -> (
+		for (p <- prefixes(pwd)) csize[p] += int(size)
+	)
+);
+
+submit! 1, csize.values filter (<= 100000) then sum;
+
+# I was too paranoid that the number starting 7 would have more 0s than the
+# number starting 3 so I copied these constants in. Definitely nothing to do
+# with all mental arithmetic faculties shutting down under time pressure
+needed := 70000000 - 30000000;
+cur := csize[[]];
+
+submit! 2, csize.values filter (>= (cur - needed)) then min
