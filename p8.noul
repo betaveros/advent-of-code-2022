@@ -1,0 +1,28 @@
+day := 8;
+import "advent-prelude.noul";
+
+puzzle_input := advent_input();
+
+grid := puzzle_input.lines map (map int);
+
+# Today's lesson in interpreter ergonomics: I need warnings when I shadow my
+# own variables
+
+# This is cleaned up a lot from my submission solution...
+
+rays := \i, j -> [V(0, 1), V(0, -1), V(1, 0), V(-1, 0)] map \delta ->
+	V(i, j) iterate (+delta) drop 1
+	# there's redundancy here but we can't map first because `map` is eager...
+	take (\[i', j'] -> grid !? i' !? j' != null)
+	map (\[i', j'] -> grid[i'][j']);
+
+submit! 1, sum! for (i, row <<- grid; j, here <<- row) yield
+	# why doesn't `all` partially apply on functions...?
+	rays(i, j) any (_ all (< here));
+
+submit! 2, max! for (i, row <<- grid; j, here <<- row) yield
+	product! rays(i, j) map \ray -> (
+		seen := 0;
+		for (h <- ray) (seen += 1; if (h >= here) break);
+		seen
+	)
