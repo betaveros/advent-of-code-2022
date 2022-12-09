@@ -1,0 +1,61 @@
+day := 9;
+import "advent-prelude.noul";
+
+puzzle_input := advent_input();
+
+directions := {
+	"U": V(-1,0),
+	"R": V(0,1),
+	"D": V(1,0),
+	"L": V(0,-1),
+};
+
+# Part 1
+
+h := V(0, 0);
+t := V(0, 0);
+seen := {t};
+
+for (line <- puzzle_input.lines; dir, cnt' := words(line); cnt := int(cnt'); _ <- 1 to cnt) (
+	h += directions[dir];
+	td := switch (t - h)
+		case  2, _ -> V( 1,  0)
+		case -2, _ -> V(-1,  0)
+		case _,  2 -> V( 0,  1)
+		case _, -2 -> V( 0, -1)
+		case x -> x;
+	t = h + td;
+	seen |.= t;
+);
+
+submit! 1, len(seen);
+
+# Part 2
+
+h = V(0, 0);
+ts := V(0, 0) .* 9;
+seen = {ts[0]};
+
+for (line <- puzzle_input.lines; dir, cnt' := words(line); cnt := int(cnt'); _ <- 1 to cnt) (
+	h += directions[dir];
+	prev := h;
+	for (ti <- 0 to 8) (
+		td := switch (ts[ti] - prev)
+			case  2,  2 -> V( 1,  1)
+			case  2, -2 -> V( 1, -1)
+			case -2,  2 -> V(-1,  1)
+			case -2, -2 -> V(-1, -1)
+			case  2,  _ -> V( 1,  0)
+			case -2,  _ -> V(-1,  0)
+			case  _,  2 -> V( 0,  1)
+			case  _, -2 -> V( 0, -1)
+			case x -> x;
+		ts[ti] = prev + td;
+		prev = ts[ti];
+	);
+	seen |.= last ts;
+);
+
+submit! 2, len(seen);
+
+# this could look much simpler; see p9-post.noul
