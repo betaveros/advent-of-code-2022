@@ -12,16 +12,14 @@ directions := {
 
 snap := \v -> if (max(abs(v)) > 1) v - signum(v) else v;
 
-for (part, knots <- [[1, 1], [2, 9]]) (
-	h := V(0, 0);
-	ts := V(0, 0) .* knots;
-	seen := {last ts};
+for (part, knot_count <- [[1, 2], [2, 10]]) (
+	knots := V(0, 0) .* knot_count;
+	seen := {last knots};
 
 	for (line <- puzzle_input.lines; dir, cnt' := words(line); cnt := int(cnt'); _ <- 1 to cnt) (
-		h += directions[dir];
-		prev := h;
-		for (ti <- 0 til knots) every ts[ti], prev = prev + snap(ts[ti] - prev);
-		seen |.= last ts;
+		knots[0] += directions[dir];
+		for (i <- 1 til knot_count) knots[i] = knots[i-1] + snap(knots[i] - knots[i-1]);
+		seen |.= last knots;
 	);
 
 	submit! part, len(seen);
