@@ -16,7 +16,7 @@ for (part, knot_count <- [[1, 2], [2, 10]]) (
 	knots := V(0, 0) .* knot_count;
 	seen := {last knots};
 
-	for (line <- puzzle_input.lines; dir, cnt' := words(line); cnt := int(cnt'); _ <- 1 to cnt) (
+	for (dir, cnt <- puzzle_input.lines map words; _ <- 1 to int(cnt)) (
 		knots[0] += directions[dir];
 		for (i <- 1 til knot_count) knots[i] = knots[i-1] + snap(knots[i] - knots[i-1]);
 		seen |.= last knots;
