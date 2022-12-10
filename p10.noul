@@ -1,0 +1,18 @@
+day := 10;
+import "advent-prelude.noul";
+
+puzzle_input := advent_input();
+
+increases := puzzle_input.lines map words flat_map \switch
+	case "noop", -> [0]
+	case "addx", v -> [0, int(v)];
+vals := increases scan + from 1;
+
+submit! 1, 20 to 220 by 40 map (\x -> vals[x-1] * x) then sum;
+
+# depicts the part 2 answer; type it in yourself
+vals group 40
+	map (_ zip (0 to 39) with (\a, b -> abs(a-b) <= 1))
+	map (map (" #"!!))
+	map (join "")
+	each print;
