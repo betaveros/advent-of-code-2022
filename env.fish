@@ -4,6 +4,9 @@ end
 function go
 	noulith p(noulith advent.noul day).noul $argv
 end
+function clip
+	noulith p(noulith advent.noul day).noul clipboard $argv
+end
 function do
 	noulith p(noulith advent.noul day).noul $argv
 end

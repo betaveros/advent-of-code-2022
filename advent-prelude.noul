@@ -1,11 +1,20 @@
 year := 2022;
+
+bold        := \text -> F"\x1b[1m{text}\x1b[0m";
+bold_red    := \text -> F"\x1b[1;31m{text}\x1b[0m";
+bold_green  := \text -> F"\x1b[1;32m{text}\x1b[0m";
+bold_yellow := \text -> F"\x1b[1;33m{text}\x1b[0m";
+
 advent_session := try
 	read_file("session") then strip
 catch e ->
 	throw F"couldn't get session: {e}. do you have a session file?";
 try day catch _ -> throw "Please declare day first! (lol what a hack)";
 advent_input := \-> (
-	switch (read_file? F"p{day}.in")
+	if ("clipboard" in argv) (
+		print! bold_red("USING CLIPBOARD");
+		utf8_decode! run_process! 'xclip', '-selection c -out'.words
+	) else switch (read_file? F"p{day}.in")
 	case null -> (
 		print "requesting...";
 		t := request!
@@ -23,7 +32,8 @@ advent_input := \-> (
 	case s -> (print "cached"; s)
 );
 submit := \level, answer -> (
-	echo F"Day {day} level {level} solving: {answer} [y/N/2]? ";
+	if ("clipboard" in argv) print! bold_red("SUBMITTING FROM CLIPBOARD");
+	echo! F"Day {day} level {level} solving: {bold_green(answer)} [y/N/2]? ";
 	flush();
 	response := input();
 	while (response starts_with "2") (

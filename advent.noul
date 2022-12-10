@@ -1,18 +1,14 @@
 day := now(-5)["day"];
 import "advent-prelude.noul";
 
-bold        := \text -> F"\x1b[1m{text}\x1b[0m";
-bold_red    := \text -> F"\x1b[1;31m{text}\x1b[0m";
-bold_green  := \text -> F"\x1b[1;32m{text}\x1b[0m";
-bold_yellow := \text -> F"\x1b[1;33m{text}\x1b[0m";
-dim         := \text -> F"\x1b[38;5;242m{text}\x1b[0m";
+# dim := \text -> F"\x1b[38;5;242m{text}\x1b[0m";
 
 stats := \text -> (
 	lns := lines text;
 	lens := sort! lns map len;
-	stats := F"{len(text)} chars in {len(words text)} words over {len(lns)} lines";
-	if (lens) stats $= F" med {lens[lens//2]} max {lens[-1]}";
-	stats
+	s := F"{len(text)} chars in {len(words text)} words over {len(lns)} lines";
+	if (lens) s $= F" med {lens[lens//2]} max {lens[-1]}";
+	s
 );
 
 summarize := \text -> (
