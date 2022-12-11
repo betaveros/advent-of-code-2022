@@ -1,0 +1,37 @@
+day := 11;
+import "advent-prelude.noul";
+
+puzzle_input := advent_input();
+
+monkeys_init := puzzle_input split "\n\n" map \par -> (
+	_name, starter, op, test, t_target, f_target := par.lines;
+	starter .= ints;
+	op = eval F"\\old -> {op split '=' then last}";
+	test, = ints test;
+	t_target, = ints t_target;
+	f_target, = ints f_target;
+	[starter, op, test, t_target, f_target, 0 #(number of inspections)]
+);
+
+for (part, rounds <- [[1, 20], [2, 10000]]) (
+	monkeys := monkeys_init;
+	modulus := monkeys map (!!2) then product;
+
+	for (itc <- 1 to rounds; i <- 0 til len(monkeys)) (
+		its, op, test, t_target, f_target, activity := monkeys[i];
+		for (it <- its) (
+			new := switch (part)
+				case 1 -> op(it) // 3
+				case 2 -> op(it) % modulus;
+			if (new % test == 0) (
+				monkeys[t_target][0] append= new;
+			) else (
+				monkeys[f_target][0] append= new;
+			)
+		);
+		monkeys[i][0] = [];
+		monkeys[i][-1] += len(its);
+	);
+
+	submit! part, sort(monkeys map last)[-2:] then product
+)
