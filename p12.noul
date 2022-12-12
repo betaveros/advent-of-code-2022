@@ -1,0 +1,48 @@
+day := 12;
+import "advent-prelude.noul";
+
+puzzle_input := advent_input();
+
+grid := puzzle_input.lines;
+
+get_height := \p -> switch (grid !!? p)
+	case 'S' -> 'a'
+	case 'E' -> 'z'
+	case c -> c;
+transitions := \st -> four_adjacencies(st) filter \st' -> (
+	g := get_height st';
+	g != null and ord(g) - ord(get_height st) >= (-1)
+);
+
+start := null;
+end := null;
+for (i, row <<- grid; j, cell <<- row) (
+	if (cell == 'S') (start = V(i, j));
+	if (cell == 'E') (end = V(i, j));
+);
+
+# as you can imagine, when submitting part 1 the transition height check was
+# flipped, and there was no try/catch machinery. I was planning to add a
+# labeled break at some point...
+for (part <- [1, 2]) try
+	seen := {end};
+	dist := 0;
+	batch := [end];
+	next_batch := [];
+	while (batch) (
+		for (st <- batch; t <- transitions(st); if t not_in seen) (
+			switch (part)
+			case 1 -> if (t == start) (
+				submit! 1, dist + 1; throw "done"
+			)
+			case 2 -> if (get_height(t) == 'a') (
+				submit! 2, dist + 1; throw "done"
+			);
+			seen |.= t;
+			next_batch append= t;
+		);
+		batch = next_batch;
+		next_batch = [];
+		dist += 1;
+	);
+catch "done" -> null

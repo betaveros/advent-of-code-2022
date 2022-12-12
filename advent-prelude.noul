@@ -73,6 +73,9 @@ five_adjacencies := \[i, j] -> [V(i-1, j), V(i, j-1), V(i, j), V(i, j+1), V(i+1,
 nine_adjacencies := \[i, j] -> ((i-1) to (i+1)) ** ((j-1) to (j+1)) map vector;
 eight_adjacencies := \p -> nine_adjacencies(p) filter (!= p);
 
+!!! := \arr, ixs -> ixs fold !! from arr;
+!!? := \arr, ixs -> ixs fold !? from arr;
+
 # for (r, c) or (x, y)
 rotated_left := \[i, j] -> V(-j, i);
 rotated_right := \[i, j] -> V(j, -i);
