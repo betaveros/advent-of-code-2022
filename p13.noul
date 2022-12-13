@@ -1,0 +1,24 @@
+day := 13;
+import "advent-prelude.noul";
+
+puzzle_input := advent_input();
+
+cmp := \a, b -> switch ([a, b])
+	case a: int, b: int -> a <=> b
+	case a: list, b: int -> a cmp [b]
+	case a: int, b: list -> [a] cmp b
+	case [], [] -> 0
+	case [], _: list -> -1
+	case _: list, [] -> 1
+	case [a, ...as], [b, ...bs] -> a cmp b or as cmp bs;
+
+submit! 1, puzzle_input split "\n\n" then enumerate sum \[i, p] -> (
+	a, b := p.lines;
+	a .= eval;
+	b .= eval;
+	if ((a cmp b) < 0) i + 1 else 0
+);
+
+sentinels := [[[2]], [[6]]];
+res := puzzle_input.lines filter id map eval then (++ sentinels) sort cmp;
+submit! 2, sentinels map (res locate) product (+1);
