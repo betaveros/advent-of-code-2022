@@ -1,0 +1,28 @@
+day := 14;
+import "advent-prelude.noul";
+
+puzzle_input := advent_input();
+
+orig_grid := puzzle_input.lines flat_map (_ then ints group 2 map vector pairwise (\a, b -> (
+	(a iterate (+(signum(b-a))) take (!= b)) +. b
+)) then flatten) then set;
+
+max_y := (orig_grid map second then max) + 2;
+
+grid := orig_grid;
+cnt := 0;
+dfs := \v -> v in grid or v[1] < max_y and (
+	blocked := dfs(v + V(0, 1)) and dfs(v + V(-1, 1)) and dfs(v + V(1, 1));
+	if (blocked) (grid |.= v; cnt += 1);
+	blocked
+);
+
+# part 1
+dfs(V(500, 0));
+submit! 1, cnt;
+
+# part 2
+grid = orig_grid || ((-1000) to 1000 map (\x -> V(x, max_y)) then set);
+cnt = 0;
+dfs(V(500, 0));
+submit! 2, cnt;

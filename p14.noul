@@ -1,0 +1,40 @@
+day := 14;
+import "advent-prelude.noul";
+
+puzzle_input := advent_input();
+
+orig_grid := {};
+
+for (line <- puzzle_input.lines) (
+	ints(line) group 2 pairwise \a, b -> (
+		a .= vector;
+		b .= vector;
+		d := signum(b - a);
+		while (1) (
+			orig_grid[a] = '#';
+			if (a == b) break;
+			a += d;
+		));
+);
+
+for (part <- [1, 2]) try
+	grid := orig_grid;
+	if (part == 2) (
+		max_y := (grid map second then max) + 2;
+		for (x <- (-1000) to 1000) grid[V(x, max_y)] = '#';
+	);
+
+	for (cnt <- iota 0) (
+		cur := V(500, 0);
+		if (part == 2 and cur in grid) (submit! 2, cnt; throw "done");
+		while (1) (
+			if (part == 1 and cur[1] >= 1000) (submit! 1, cnt; throw "done");
+			nxt := null;
+			for (d <- [V(0, 1), V(-1, 1), V(1, 1)]) (
+				if ((cur + d) not_in grid) (nxt = cur + d; break)
+			);
+			if (nxt == null) (grid[cur] = 'o'; break)
+			else (cur = nxt);
+		);
+	)
+catch "done" -> null
