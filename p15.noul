@@ -1,0 +1,72 @@
+day := 15;
+import "advent-prelude.noul";
+
+puzzle_input := advent_input();
+
+beacons := puzzle_input.lines map ints map \[a, b, c, d] -> [V(a, b), V(c, d)];
+
+dist := \p, q -> (p - q) map abs then sum;
+
+events := [];
+target_y := 2000000;
+ans := 0;
+evil := {};
+
+for (sensor, closest <- beacons) (
+	d := sensor dist closest;
+	a := abs(sensor[1] - target_y);
+	if (d - a >= 0) (
+		# Ban sensor[0] ± (d - a) inclusive.
+		events +.= [sensor[0] - (d - a), -1];
+		events +.= [sensor[0] + (d - a) + 1, 1];
+	);
+	if (closest[1] == target_y) evil |.= closest[0];
+);
+
+events .= sort;
+
+depth := 0;
+last_x := -(10^10);
+for (x, d <- events) (
+	if (depth < 0) ans += x - last_x;
+	depth += d;
+	last_x = x;
+);
+submit! 1, ans - len(evil);
+
+try for ([s1, c1], [s2, c2] <- beacons combinations 2) (
+	d1 := (s1 dist c1) + 1;
+	d2 := (s2 dist c2) + 1;
+	x1, y1 := s1;
+	x2, y2 := s2;
+	# Basically since the point we're looking for is unique, it has to be at
+	# the intersection of the boundaries of squares. So compute that for every
+	# pair of squares and verify if each candidate actually satisfies the
+	# problem condition. Don't think too hard about avoiding spurious
+	# solutions, because checking is cheap enough that a few extra factors of 2
+	# don't matter.
+	# |x - x1| + |y - y1| = d1
+	# |x - x2| + |y - y2| = d2
+	#
+	# x - x1 = ±d1 ± (y - y1)
+	# x - x2 = ±d2 ± (y - y2)
+	# if this has a "unique" solution, the x signs and y signs must be
+	# opposite, so:
+	# 2x - x1 - x2 = ±d1 ± d2 ± (y - y1) ∓ (y - y2)
+	# x = (x1 + x2 ±d1 ± d2 ∓ y1 ± y2)/2
+	for (
+		xx1 <- [d1, -d1];
+		xx2 <- [d2, -d2];
+		xx3 <- [y1 - y2, y2 - y1];
+		xx := x1 + x2 + xx1 + xx2 + xx3;
+		yy1 <- [d1, -d1];
+		yy2 <- [d2, -d2];
+		yy3 <- [x1 - x2, x2 - x1];
+		yy := y1 + y2 + yy1 + yy2 + yy3) (
+		p := V(xx//2, yy//2);
+		if (p all (0 <= _ <= 4000000) and beacons all \[s, c] -> (s dist p) > (s dist c)) (
+			submit! 2, p[0] * 4000000 + p[1];
+			throw "done";
+		)
+	)
+) catch "done" -> null;
