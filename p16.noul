@@ -26,12 +26,12 @@ choose_one := \xs -> for (i <- 0 til len(xs)) yield [xs[i], xs[:i] ++ xs[i+1:]];
 dfs := memoize \cur: int, rest: list, t: int ->
 	max! (for (r, rr <- choose_one(rest); if dist[cur][r] < t) yield
 		flows[r] * (t - dist[cur][r] - 1) + dfs(r, rr, t - dist[cur][r] - 1))
-		or [0];
+		+. 0;
 
 dfs2 := \cur: int, rest: list, t: int ->
 	max! (for (r, rr <- choose_one(rest); if dist[cur][r] < t) yield
 		flows[r] * (t - dist[cur][r] - 1) + dfs2(r, rr, t - dist[cur][r] - 1))
-		or [dfs(names locate "AA", rest, 26)];
+		+. dfs(names locate "AA", rest, 26);
 
 # t := time();
 submit! 1, dfs(names locate "AA", enumerate(flows) filter (\[i, f] -> f > 0) map first, 30);
