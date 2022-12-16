@@ -1,0 +1,41 @@
+day := 16;
+import "advent-prelude.noul";
+names := [];
+flows := [];
+conns := [];
+for (line <- advent_input().lines) (
+	names append= (line split ' has ')[0][-2:];
+	flows append= line.ints.only;
+	conns append= (line split ' valve')[1][1:].strip split ', ';
+);
+
+dist := 99 .* len(names) .* len(names);
+for (i, cl <<- conns) (
+	for (conn <- cl) (
+		dist[i][names locate conn] = 1;
+	)
+);
+
+# Floyd-Warshall
+for (k <- 0 til len(names); i <- 0 til len(names); j <- 0 til len(names))
+	dist[i][j] min= dist[i][k] + dist[k][j];
+
+choose_one := \xs -> for (i <- 0 til len(xs)) yield [xs[i], xs[:i] ++ xs[i+1:]];
+
+# This memoize actually pulls its weight!
+dfs := memoize \cur: int, rest: list, t: int ->
+	max! (for (r, rr <- choose_one(rest); if dist[cur][r] < t) yield
+		flows[r] * (t - dist[cur][r] - 1) + dfs(r, rr, t - dist[cur][r] - 1))
+		or [0];
+
+dfs2 := \cur: int, rest: list, t: int ->
+	max! (for (r, rr <- choose_one(rest); if dist[cur][r] < t) yield
+		flows[r] * (t - dist[cur][r] - 1) + dfs2(r, rr, t - dist[cur][r] - 1))
+		or [dfs(names locate "AA", rest, 26)];
+
+# t := time();
+submit! 1, dfs(names locate "AA", enumerate(flows) filter (\[i, f] -> f > 0) map first, 30);
+# print(F"Part 1: {time() - t}");
+# t = time();
+submit! 2, dfs2(names locate "AA", enumerate(flows) filter (\[i, f] -> f > 0) map first, 26);
+# print(F"Part 2: {time() - t}");
