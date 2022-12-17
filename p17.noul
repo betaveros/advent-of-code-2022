@@ -1,0 +1,93 @@
+day := 17;
+import "advent-prelude.noul";
+
+puzzle_input := advent_input();
+shapes := "####
+
+.#.
+###
+.#.
+
+..#
+..#
+###
+
+#
+#
+#
+#
+
+##
+##" split "\n\n" map \rep -> for (i, line <<- rep.lines; j, c <<- line; if c == '#') yield V(i, j);
+
+puzzle_input .= strip;
+for (part, rock_count <- [[1, 2022], [2, 1000000000000]]) (
+	occupied := {}; # set of occupied row, col pairs
+	# we use a cursed coordinate system:
+	# - the floor is the line row=0
+	# - the open columns are 0 <= col < 7
+	# - rows go down, so every row coordinate in occupied will be negative
+	r_mins := [];
+	drift_i := 0;
+	in_bounds := \v: vector -> 0 <= v[1] < 7 and v[0] < 0 and v not_in occupied;
+	occupied_r_min := 0;
+	seen := {};
+	shape_i_target := rock_count - 1;
+	bonus := 0;
+	try for (shape_i, shape <<- cycle(shapes)) (
+		r_max := shape map first then max;
+		# bottom edge 3 units from top existing edge means bottom rock 4 units
+		# above top existing rock
+		shape = shape map (+ V((-r_max) - 4 + occupied_r_min, 2));
+		while (1) (
+			drift := switch (puzzle_input !% drift_i)
+				case "<" -> V(0,-1)
+				case ">" -> V(0,1);
+			if (shape map (+ drift) all in_bounds) shape .= map (+ drift);
+			drift_i += 1;
+			if (shape map (+ V(1,0)) all in_bounds) (
+				shape .= map (+ V(1,0))
+			) else (
+				# assert! not! occupied && set(shape);
+				occupied ||= set(shape);
+				occupied_r_min min= min(shape map first);
+				r_mins append= occupied_r_min;
+				if (shape_i == shape_i_target) (
+					submit! part, bonus - occupied_r_min;
+					throw "done"
+				);
+				# construct a crude approximation of the board state and history of
+				# rocks/drifts, such that when it repeats we've found a period
+				memkey := [
+					shape_i % len(shapes),
+					drift_i % len(puzzle_input),
+					r_mins[-6:] pairwise -
+				];
+				# have we seen it before?
+				switch (seen !? memkey)
+				case null -> (
+					# we have not seen it before
+					seen[memkey] = [shape_i, r_mins[-1]]
+				)
+				case [shape_i', old_ans] -> (
+					# we have seen it before
+					if (shape_i_target == rock_count - 1) (
+						# and have not seen any repetitions before, so just
+						# calculate the next time we'll hit the point in the
+						# period corresponding to the goal, wait til we get
+						# there, and then be equipped to calculate the answer.
+						# (or, in hindsight, we could have just looked it up in
+						# r_mins...)
+						period := shape_i - shape_i';
+						# I have little confidence there aren't some off-by-one
+						# errors here but ehhhh
+						bonus = ((-(r_mins[-1])) - (-old_ans)) *
+							((rock_count - shape_i) // period);
+						shape_i_target = shape_i + (rock_count - 1 - shape_i) % period;
+					)
+				);
+				break;
+			)
+		)
+	) catch "done" -> null
+)
