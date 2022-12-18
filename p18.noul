@@ -1,0 +1,39 @@
+day := 18;
+import "advent-prelude.noul";
+
+puzzle_input := advent_input();
+
+objs := puzzle_input.lines map ints map vector then set;
+
+dirs := [
+	V(0,0,1),
+	V(0,0,-1),
+	V(0,1,0),
+	V(0,-1,0),
+	V(1,0,0),
+	V(-1,0,0),
+];
+
+submit! 1, objs ** dirs map (apply +) count (not_in objs);
+
+xs := objs map first;
+ys := objs map second;
+zs := objs map last;
+
+lb := V(min(xs) - 1, min(ys) - 1, min(zs) - 1);
+ub := V(max(xs) + 1, max(ys) + 1, max(zs) + 1);
+
+in_bounds := \p -> 0 til 3 all \i -> lb[i] <= p[i] <= ub[i];
+seen := {};
+# Just a DFS, unrolled into a loop because Noulith stack frames are totally
+# unoptimized and correspond to tons of Rust stack frames, causing an overflow
+stack := [lb];
+while (stack) (
+	p := pop stack;
+	if (p not_in seen and p not_in objs and in_bounds p) (
+		seen |.= p;
+		for (d <- dirs) stack append= p + d;
+	)
+);
+
+submit! 2, objs ** dirs map (apply +) count (in seen)
