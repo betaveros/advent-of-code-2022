@@ -1,0 +1,40 @@
+day := 20;
+import "advent-prelude.noul";
+
+puzzle_input := advent_input();
+
+# sooo slow
+
+for (part <- [1, 2]) (
+	iterations, xs := switch (part)
+	case 1 -> [1, enumerate! ints(puzzle_input)]
+	case 2 -> [10, enumerate! ints(puzzle_input) map (*811589153)];
+	xs' := xs;
+	print(len(xs), xs map second map abs then sum);
+	for (it <- 1 to iterations) (
+		print("iteration", it);
+		for (ix <- xs) (
+			src := xs' locate ix;
+			_, x := ix;
+			if (x > 0) (
+				for (i <- 0 til (x % (len(xs)-1))) (
+					swap xs'[src], xs'[(src + 1) % len(xs)];
+					src = (src + 1) % len(xs);
+				)
+			) else if (x < 0) (
+				for (i <- 0 til ((-x) % (len(xs)-1))) (
+					swap xs'[src], xs'[(src - 1) %% len(xs)];
+					src = (src - 1) %% len(xs);
+				)
+			);
+			assert! xs'[src] == ix;
+		)
+	);
+	print("final", xs');
+	t := xs' locate \x -> x[1] == 0;
+	ans := [xs' !% (t + 1000), xs' !% (t + 2000), xs' !% (t + 3000)];
+
+	print(ans);
+	print(time());
+	submit! part, sum (ans map second);
+)
