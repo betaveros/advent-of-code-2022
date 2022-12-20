@@ -1,0 +1,52 @@
+day := 19;
+import "advent-prelude.noul";
+
+puzzle_input := advent_input();
+
+solve := freeze \bp_line, minutes -> (
+	bp_id, ore_bot_cost, clay_bot_cost, obs_bot_ore_cost, obs_bot_clay_cost, geode_bot_ore_cost, geode_bot_obs_cost := ints bp_line;
+	max_ore_cost := max(ore_bot_cost, clay_bot_cost, obs_bot_ore_cost, geode_bot_ore_cost);
+	print("solving", bp_id);
+	# ore, clay, obs, geode
+	ans := 0;
+	dfs := \minute: int, resources: vector, bots: vector -> (
+		# print("dfs", minute, resources, bots);
+		# assert! resources all (>= 0);
+		# assert! bots all (>= 0);
+		ans_idle := resources[3] + bots[3] * minute;
+		if (ans_idle > ans) (
+			ans = ans_idle;
+			print("- new best:", ans);
+		);
+		ans_opti := ans_idle + (minute * (minute - 1) // 2);
+		if (ans_opti <= ans) return;
+		turns_to_do := \cost -> (
+			ts := resources zip bots zip cost with \r, b, c ->
+				if (r >= c) 0 else if (b) (c - r + b - 1) // b else null;
+			if (ts all (!= null)) max ts else null
+		);
+		costs := [
+			[3, V(geode_bot_ore_cost, 0, geode_bot_obs_cost, 0)],
+			[2, V(obs_bot_ore_cost, obs_bot_clay_cost, 0, 0)],
+			[1, V(clay_bot_cost, 0, 0, 0)],
+			[0, V(ore_bot_cost, 0, 0, 0)],
+		];
+		for (i, c <- costs) (
+			if (i == 0 and bots[i] >= max_ore_cost) continue;
+			if (i == 1 and bots[i] >= obs_bot_clay_cost) continue;
+			if (i == 2 and bots[i] >= geode_bot_obs_cost) continue;
+			t := turns_to_do c;
+			if (t != null and t < minute) (
+				bots' := bots;
+				bots'[i] += 1;
+				dfs(minute - t - 1, resources + (t + 1) * bots - c, bots');
+			)
+		);
+	);
+	dfs(minutes, V(0, 0, 0, 0), V(1, 0, 0, 0));
+	[bp_id, ans]
+);
+
+submit! 1, for (bp <- puzzle_input.lines) yield solve(bp, 24) apply * into sum;
+
+submit! 2, for (bp <- puzzle_input.lines take 3) yield solve(bp, 32).second into product;
