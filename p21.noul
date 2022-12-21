@@ -31,5 +31,5 @@ while (1) (
 	switch (solve(mid)[1:] apply <=>)
 		case 0 -> (submit(2, mid); break)
 		case 1 -> (lo = mid)
-		case (-1) -> (hi = mid)
+		case -1 -> (hi = mid)
 )
