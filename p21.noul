@@ -1,0 +1,35 @@
+day := 21;
+import "advent-prelude.noul";
+
+puzzle_input := advent_input();
+
+solve := \h -> (
+	known := {};
+	if (h != null) known["humn"] = h;
+	while (1) for (line <- puzzle_input.lines) (
+		lhs, rhs := line split ": ";
+		if (lhs in known) continue;
+		switch (rhs.words)
+		case d, -> (known[lhs] = int(d))
+		case a, op, b -> if (a in known and b in known) (
+			known[lhs] = eval(F"{op}")(known[a], known[b]);
+			if (lhs == "root") return [known[lhs], known[a], known[b]];
+		)
+	)
+);
+
+submit! 1, solve(null)[0];
+
+# binary search from bounds found manually; i'm too lazy to work out a
+# reasonably general way to juggle the sign possibilities (and this strategy
+# obviously doesn't work for general inputs anyway since rational polynomials
+# aren't monotonic)
+lo := 1000000000000; # lhs > rhs
+hi := 10000000000000; # lhs < rhs
+while (1) (
+	mid := (lo + hi) // 2;
+	switch (solve(mid)[1:] apply <=>)
+		case 0 -> (submit(2, mid); break)
+		case 1 -> (lo = mid)
+		case (-1) -> (hi = mid)
+)
