@@ -11,9 +11,13 @@ solve := \h -> (
 		if (lhs in known) continue;
 		switch (rhs.words)
 		case d, -> (known[lhs] = int(d))
-		case a, op, b -> if (a in known and b in known) (
-			known[lhs] = eval(F"{op}")(known[a], known[b]);
-			if (lhs == "root") return [known[lhs], known[a], known[b]];
+		case a, op, b -> (
+			switch ([known !? a, known !? b])
+			case av != null, bv != null -> (
+				known[lhs] = eval(op)(av, bv);
+				if (lhs == "root") return [known[lhs], av, bv];
+			)
+			case _ -> null
 		)
 	)
 );
