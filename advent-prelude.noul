@@ -71,10 +71,12 @@ signed_ints := \s -> s search_all R"-?\d+" map int;
 four_adjacencies := \[i, j] -> [V(i-1, j), V(i, j-1), V(i, j+1), V(i+1, j)];
 five_adjacencies := \[i, j] -> [V(i-1, j), V(i, j-1), V(i, j), V(i, j+1), V(i+1, j)];
 nine_adjacencies := \[i, j] -> ((i-1) to (i+1)) ** ((j-1) to (j+1)) map vector;
-eight_adjacencies := \p -> nine_adjacencies(p) filter (!= p);
+eight_adjacencies := freeze \p -> nine_adjacencies(p) filter (!= p);
 
 !!! := \arr, ixs -> ixs fold !! from arr;
+!!!["precedence"] = !!["precedence"];
 !!? := \arr, ixs -> ixs fold !? from arr;
+!!?["precedence"] = !?["precedence"];
 
 # for (r, c) or (x, y)
 rotated_left := \[i, j] -> V(-j, i);
