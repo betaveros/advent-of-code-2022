@@ -1,0 +1,37 @@
+day := 23;
+import "advent-prelude.noul";
+
+puzzle_input := advent_input();
+
+locs := for (i, line <<- puzzle_input.lines; j, c <<- line; if c == '#') yield V(i, j) into set;
+
+dirs := [V(-1, 0), V(1, 0), V(0, -1), V(0, 1)];
+splay := memoize \dir -> [-1, 0, 1] map (\d -> dir map (\switch case 0 -> d case x -> x) to vector);
+splayed := \p, dir -> splay(dir) map (+p);
+
+# part 2 is really slow... I think the constant factors from a tree-walk
+# interpreter doing lots of nested functions just add up. the weird memoize
+# above helps
+
+for (i <- iota 1) (
+	propose := \loc -> (
+		if (eight_adjacencies(loc) all (not_in locs)) null
+		else for (dir <- dirs) if (splayed(loc, dir) all (not_in locs)) return loc + dir
+	);
+	proposals := locs map propose then frequencies;
+	locs' := {};
+	moved := false;
+	for (loc <- locs) (
+		p := propose(loc);
+		if (p == null or proposals[p] > 1) (locs' |.= loc)
+		else (locs' |.= p; moved = true);
+	);
+
+	dirs = dirs[1:] +. dirs[0];
+	locs = locs';
+	if (i == 10) submit! 1,
+		(max(locs map first) - min(locs map first) + 1) *
+		(max(locs map second) - min(locs map second) + 1) - len(locs);
+	if (not moved) submit! 2, i;
+	print(i, len(locs));
+)
