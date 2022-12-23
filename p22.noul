@@ -1,0 +1,116 @@
+day := 22;
+import "advent-prelude.noul";
+
+puzzle_input := advent_input();
+
+grid, instructions := puzzle_input split "\n\n";
+grid .= lines;
+instructions .= strip;
+
+locate_last := \x, f -> for (i <- (len(x) - 1) to 0 by (-1)) if (f(x[i])) return i;
+
+# Portals are represented by the coordinates of the upper-left corner and then
+# whether it's horizontal or vertical. The third item represents whether the
+# coordinates along the two portals are flipped (1 if the top or left edge of
+# each portal matches the other, -1 if not); the fourth item represents whether
+# the directions into the portals are flipped (1 if going right/down into one
+# portal is the same as going right/down into the other, -1 if not). There is
+# redundancy in these columns but it's too hard to reason about confidently
+# :zzz:
+portals := [
+	[[0, 50, "H"], [150, 0, "V"], 1, -1],
+	[[0, 100, "H"], [200, 0, "H"], 1, 1],
+	[[0, 50, "V"], [100, 0, "V"], -1, -1],
+	[[50, 50, "V"], [100, 0, "H"], 1, -1],
+	[[0, 150, "V"], [100, 100, "V"], -1, -1],
+	[[50, 100, "H"], [50, 100, "V"], 1, -1],
+	[[150, 50, "H"], [150, 50, "V"], 1, -1],
+];
+
+# Given a location and a direction to be traveling, does it pass through the
+# portal? If so, return the coordinate along the portal's dimension (satisfying
+# 0 <= c < 50) and whether the original location is above or to the left of the
+# portal. Otherwise, return null.
+try_pass := \portal, loc, delta -> (
+	switch (delta)
+	case 0, (1 or -1) -> (
+		if (portal[2] == "V" and 0 <= loc[0] - portal[0] < 50 and {loc[1], (loc+delta)[1]} == {portal[1], portal[1] - 1})
+		[loc[0] - portal[0], loc[1] < portal[1]]
+		else null
+	)
+	case (1 or -1), 0 -> (
+		if (portal[2] == "H" and 0 <= loc[1] - portal[1] < 50 and {loc[0], (loc+delta)[0]} == {portal[0], portal[0] - 1})
+		[loc[1] - portal[1], loc[0] < portal[0]]
+		else null
+	)
+);
+
+# Given a portal, a coordinate along the portal's dimension (satisfying 0 <= c
+# < 50), and whether the desired location is above or to the left of the
+# portal, return the coordinates of the location next to the portal.
+unpass := \portal, px, is_less -> switch (portal[2])
+case "V" -> V(portal[0] + px, portal[1] - is_less)
+case "H" -> V(portal[0] - is_less, portal[1] + px);
+
+# Given a location and a direction to be traveling that would lead off the
+# grid, warp it through a portal to a new location and direction.
+warp := \loc, delta -> (
+	res := for (pa, pb, m, dm <- portals; p1, p2 <- [[pa, pb], [pb, pa]]; passed := try_pass(p1, loc, delta); if passed != null) yield (
+		px, is_less := passed;
+		print("is_less", is_less);
+		assert! 0 <= px < 50;
+		px' := if (m == (-1)) 49 - px else px;
+		delta' := delta;
+		if (pa[2] != pb[2]) (swap delta'[0], delta'[1]);
+		delta' *= dm;
+
+		print("is_less after", is_less xor (dm == (1)));
+		base' := unpass(p2, px', is_less xor (dm == (1)));
+
+		[base', delta']
+	);
+	print(res);
+	only(res)
+);
+
+
+for (part <- [1, 2]) (
+	loc := V(0, grid[0] locate (\x -> x != ' ' and x != '#'));
+	delta := V(0, 1);
+
+	for (instr <- instructions group (== on is_digit)) (
+		switch (instr)
+		case 'L' -> (delta .= rotated_left)
+		case 'R' -> (delta .= rotated_right)
+		case d -> (
+			print(loc, delta, d);
+			prev_loc := null;
+			for (s <- 1 to int(d)) (
+				nxt := loc + delta;
+				# print(grid, nxt);
+				print('step', s, loc, nxt);
+
+				delta' := delta;
+
+				if (grid !!? nxt in [' ', null])
+					switch (part)
+					case 1 -> (switch (delta)
+						case 1, 0 -> (nxt[0] = grid locate (\x -> (x !? nxt[1]) not_in [' ', null]))
+						case -1, 0 -> (nxt[0] = grid locate_last (\x -> (x !? nxt[1]) not_in [' ', null]))
+						case 0, 1 -> (nxt[1] = grid[nxt[0]] locate \x -> x not_in [' ', null])
+						case 0, -1 -> (nxt[1] = grid[nxt[0]] locate_last \x -> x not_in [' ', null]);
+					)
+					case 2 -> (nxt, delta' = warp(loc, delta));
+
+				switch (grid !!! nxt) case '#' -> break case '.' -> (loc, delta = nxt, delta')
+			)
+		);
+		print(instr, loc, delta)
+	);
+
+	submit! part, 1000 * (loc[0] + 1) + 4 * (loc[1] + 1) + switch (delta)
+	case 0, 1 -> 0
+	case 0, -1 -> 2
+	case 1, 0 -> 1
+	case -1, 0 -> 3;
+)
