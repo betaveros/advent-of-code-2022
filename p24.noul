@@ -1,0 +1,62 @@
+day := 24;
+import "advent-prelude.noul";
+
+puzzle_input := advent_input();
+
+grid := puzzle_input.lines;
+
+transitions := five_adjacencies;
+start := V(0, grid[0] locate ".");
+end := V(len(grid) - 1, grid[-1] locate ".");
+
+winds := for (i, row <<- grid; j, c <<- row; d := switch (c)
+	case '<' -> V(0, -1)
+	case '>' -> V(0,  1)
+	case '^' -> V(-1, 0)
+	case 'v' -> V( 1, 0)
+	case _ -> null; if d) yield [V(i, j), d];
+
+dist := 0;
+batch := {start: 0};
+next_batch := {};
+allowed := {'^', '<', '>', 'v', '.'};
+submitted1 := 0;
+
+try while (batch) (
+	print(dist);
+	# tick winds
+	winds map= \[p, d] -> (
+		out := p + d;
+		# print(out, grid !!! out);
+		if (grid !!? out == '#') switch (d)
+			case 0, -1 -> (out[1] = len(grid[0]) - 2)
+			case 0,  1 -> (out[1] = 1)
+			case -1, 0 -> (out[0] = len(grid) - 2)
+			case  1, 0 -> (out[0] = 1);
+		# print(out, grid !!! out);
+		assert! (grid !!! out) in allowed;
+		[out, d]
+	);
+	occupied := set(winds map first);
+
+	for (st, visits <<- batch;
+		t <- transitions(st);
+		if t not_in occupied and grid !!? t in allowed) (
+
+		if (even visits and t == end) visits += 1
+		else if (odd visits and t == start) visits += 1;
+		if (visits == 1 and not submitted1) (
+			submit! 1, dist + 1;
+			submitted1 = true;
+		);
+		if (visits == 3) (
+			submit! 2, dist + 1;
+			throw "done";
+		);
+		# if (t == end) submit! 1, dist + 1;
+		next_batch[t] = (next_batch !? t or 0) max visits;
+	);
+	batch = next_batch;
+	next_batch = {};
+	dist += 1;
+) catch "done" -> null;
